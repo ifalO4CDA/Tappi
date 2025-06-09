@@ -1,0 +1,16 @@
+// .sequelizerc
+const path = require('path');
+
+module.exports = {
+  // Diz ao CLI onde está nosso arquivo de configuração customizado
+  'config': path.resolve('config', 'database.js'),
+
+  // Diz ao CLI onde estão os modelos
+  'models-path': path.resolve('src', 'models'),
+
+  // Diz ao CLI onde estão os seeders
+  'seeders-path': path.resolve('seeders'),
+
+  // Diz ao CLI onde estão as migrations
+  'migrations-path': path.resolve('migrations')
+};
