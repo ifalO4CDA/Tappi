@@ -7,6 +7,9 @@ const PassageiroController = require('../controllers/PassageiroController');
 router.get('/passageiro/:rfid_tag', PassageiroController.verificarAutorizacao);
 
 // Rota para registrar a presença
-router.post('/passageiro/registrar', PassageiroController.registrarPresenca);
+router.post('/passageiro/presenca', PassageiroController.registrarPresenca);
+
+// Rota para CRIAR um novo passageir
+router.post('/passageiros', PassageiroController.criarPassageiro);
 
 module.exports = router;
