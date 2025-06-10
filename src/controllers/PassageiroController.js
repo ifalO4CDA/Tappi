@@ -62,7 +62,6 @@ const PassageiroController = {
         try {
             const { nome, rfid_tag, autorizado } = req.body;
 
-            // Validação básica dos dados de entrada
             if (!nome || !rfid_tag) {
                 return res.status(400).json({ erro: 'Os campos "nome" e "rfid_tag" são obrigatórios.' });
             }
@@ -73,12 +72,10 @@ const PassageiroController = {
                 autorizado: autorizado
             });
 
-            // Retorna o status 201 (Created) e os dados do passageiro criado
             res.status(201).json(novoPassageiro);
 
         } catch (error) {
             console.log(error);
-            // Tratamento de erro específico para violação de constraint (ex: rfid_tag duplicada)
             if (error instanceof Sequelize.UniqueConstraintError) {
                 return res.status(409).json({ erro: 'A tag RFID fornecida já está em uso.' });
             }
@@ -89,19 +86,73 @@ const PassageiroController = {
     },
 
     /**
+ * Atualiza os dados de um passageiro específico.
+ * Associada à rota: PUT /api/passageiros/:id
+ */
+    async atualizarPassageiro(req, res) {
+        try {
+            const { id } = req.params; 
+            const { nome, rfid_tag, autorizado } = req.body; 
+
+            const passageiro = await Passageiro.findByPk(id);
+
+            if (!passageiro) {
+                return res.status(404).json({ erro: 'Passageiro não encontrado.' });
+            }
+
+            passageiro.nome = nome || passageiro.nome; 
+            passageiro.rfid_tag = rfid_tag || passageiro.rfid_tag;
+
+            if (autorizado !== undefined) {
+                passageiro.autorizado = autorizado;
+            }
+
+            await passageiro.save();
+
+            res.status(200).json(passageiro);
+
+        } catch (error) {
+            if (error instanceof Sequelize.UniqueConstraintError) {
+                return res.status(409).json({ erro: 'A tag RFID fornecida já está em uso por outro passageiro.' });
+            }
+            console.error("Erro em atualizarPassageiro:", error);
+            res.status(500).json({ erro: 'Erro interno no servidor.' });
+        }
+    },
+
+    /**
+     * Deleta um passageiro do sistema.
+     * Associada à rota: DELETE /api/passageiros/:id
+     */
+    async deletarPassageiro(req, res) {
+        try {
+            const { id } = req.params;
+
+            const passageiro = await Passageiro.findByPk(id);
+
+            if (!passageiro) {
+                return res.status(404).json({ erro: 'Passageiro não encontrado.' });
+            }
+
+            await passageiro.destroy();
+
+            res.status(204).send();
+
+        } catch (error) {
+            console.error("Erro em deletarPassageiro:", error);
+            res.status(500).json({ erro: 'Erro interno no servidor.' });
+        }
+    },
+
+    /**
   * Função para listar todos os passageiros cadastrados.
   * Associada à rota: GET /api/passageiros
   */
     async listarPassageiros(req, res) {
         try {
-            // O método findAll() busca todos os registros da tabela Passageiro.
             const passageiros = await Passageiro.findAll({
-                // Dica: você pode refinar a busca aqui. Exemplos:
-                // order: [['nome', 'ASC']], // Ordena por nome em ordem ascendente
-                // attributes: ['id', 'nome', 'rfid_tag', 'autorizado'], // Retorna apenas estes campos
             });
 
-            // Retorna status 200 (OK) e a lista de passageiros em formato JSON.
             res.status(200).json(passageiros);
 
         } catch (error) {
