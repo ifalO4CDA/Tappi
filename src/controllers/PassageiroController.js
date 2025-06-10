@@ -88,6 +88,27 @@ const PassageiroController = {
         }
     },
 
+    /**
+  * Função para listar todos os passageiros cadastrados.
+  * Associada à rota: GET /api/passageiros
+  */
+    async listarPassageiros(req, res) {
+        try {
+            // O método findAll() busca todos os registros da tabela Passageiro.
+            const passageiros = await Passageiro.findAll({
+                // Dica: você pode refinar a busca aqui. Exemplos:
+                // order: [['nome', 'ASC']], // Ordena por nome em ordem ascendente
+                // attributes: ['id', 'nome', 'rfid_tag', 'autorizado'], // Retorna apenas estes campos
+            });
+
+            // Retorna status 200 (OK) e a lista de passageiros em formato JSON.
+            res.status(200).json(passageiros);
+
+        } catch (error) {
+            console.error("Erro em listarTodos:", error);
+            res.status(500).json({ erro: 'Erro interno no servidor.' });
+        }
+    },
 };
 
 module.exports = PassageiroController;

@@ -3,6 +3,9 @@ const router = express.Router();
 
 const PassageiroController = require('../controllers/PassageiroController');
 
+// Rota para LISTAR todos os passageiros
+router.get('/passageiros', PassageiroController.listarPassageiros);
+
 // Rota para verificar um passageiro
 router.get('/passageiro/:rfid_tag', PassageiroController.verificarAutorizacao);
 
