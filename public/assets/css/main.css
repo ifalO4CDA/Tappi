@@ -11,6 +11,8 @@
     --border-color: #e5e7eb;
     --accent-color: #6366f1;
     --accent-hover-color: #4f46e5;
+    --success-color: #38a169;
+    --error-color: #e53e3e;
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
@@ -187,18 +189,38 @@ td .status-badge::before {
     background-color: #ef4444;
 }
 
-.btn {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--border-color);
+/* --- Botões de Ação na Tabela --- */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
     border-radius: 6px;
-    background-color: #fff;
-    color: var(--text-primary);
+    background-color: transparent;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
 }
-.btn:hover {
-    background-color: #f9fafb;
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-btn:hover {
+    background-color: #f3f4f6;
+    color: var(--text-primary);
+}
+
+.icon-btn.delete:hover {
+    background-color: #fee2e2;
+    color: var(--error-color);
 }

@@ -12,7 +12,7 @@ router.get('/passageiro/:rfid_tag', PassageiroController.verificarAutorizacao);
 // Rota para registrar a presença
 router.post('/passageiro/presenca', PassageiroController.registrarPresenca);
 
-// Rota para CRIAR um novo passageir
+// Rota para CRIAR um novo passageiro
 router.post('/passageiros', PassageiroController.criarPassageiro);
 
 // Rota para ATUALIZAR um passageiro específico
