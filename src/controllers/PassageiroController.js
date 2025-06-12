@@ -91,8 +91,8 @@ const PassageiroController = {
  */
     async atualizarPassageiro(req, res) {
         try {
-            const { id } = req.params; 
-            const { nome, rfid_tag, autorizado } = req.body; 
+            const { id } = req.params;
+            const { nome, rfid_tag, autorizado } = req.body;
 
             const passageiro = await Passageiro.findByPk(id);
 
@@ -100,7 +100,7 @@ const PassageiroController = {
                 return res.status(404).json({ erro: 'Passageiro não encontrado.' });
             }
 
-            passageiro.nome = nome || passageiro.nome; 
+            passageiro.nome = nome || passageiro.nome;
             passageiro.rfid_tag = rfid_tag || passageiro.rfid_tag;
 
             if (autorizado !== undefined) {
@@ -116,6 +116,26 @@ const PassageiroController = {
                 return res.status(409).json({ erro: 'A tag RFID fornecida já está em uso por outro passageiro.' });
             }
             console.error("Erro em atualizarPassageiro:", error);
+            res.status(500).json({ erro: 'Erro interno no servidor.' });
+        }
+    },
+
+    /**
+ * Busca os dados de um passageiro específico pelo seu ID.
+ * Associada à rota: GET /api/passageiros/:id
+ */
+    async getPassageiroById(req, res) {
+        try {
+            const { id } = req.params;
+            const passageiro = await Passageiro.findByPk(id);
+
+            if (!passageiro) {
+                return res.status(404).json({ erro: 'Passageiro não encontrado.' });
+            }
+
+            res.status(200).json(passageiro);
+        } catch (error) {
+            console.error("Erro em getPassageiroById:", error);
             res.status(500).json({ erro: 'Erro interno no servidor.' });
         }
     },

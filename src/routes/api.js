@@ -18,6 +18,10 @@ router.post('/passageiros', PassageiroController.criarPassageiro);
 // Rota para ATUALIZAR um passageiro específico
 router.put('/passageiros/:id', PassageiroController.atualizarPassageiro);
 
+// Rota para BUSCAR um passageiro específico pelo seu ID
+router.get('/passageiros/:id', PassageiroController.getPassageiroById);
+
+
 // Rota para DELETAR um passageiro específico
 router.delete('/passageiros/:id', PassageiroController.deletarPassageiro);
 
