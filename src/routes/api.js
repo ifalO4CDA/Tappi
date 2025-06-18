@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const PresencaController = require('../controllers/PresencaController'); 
 const PassageiroController = require('../controllers/PassageiroController');
 
 // Rota para LISTAR todos os passageiros
@@ -24,6 +24,10 @@ router.get('/passageiros/:id', PassageiroController.getPassageiroById);
 
 // Rota para DELETAR um passageiro específico
 router.delete('/passageiros/:id', PassageiroController.deletarPassageiro);
+
+// --- Rota de Presenças ---
+router.get('/presencas', PresencaController.listarTodas);
+
 
 
 module.exports = router;

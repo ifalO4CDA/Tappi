@@ -8,9 +8,6 @@ const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 
-// AQUI ESTÁ A CORREÇÃO PRINCIPAL:
-// O caminho agora sobe dois níveis (de /src/models para a raiz)
-// e aponta para o nosso arquivo config/database.js
 const config = require(__dirname + '/../../config/database.js')[env];
 const db = {};
 
