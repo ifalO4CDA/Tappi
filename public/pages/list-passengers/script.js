@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // --- Elementos do DOM ---
     const tableBody = document.getElementById('passenger-table-body');
     const paginationContainer = document.getElementById('pagination-container');
-    
+
     // Elementos do Modal de Edição
     const editModalOverlay = document.getElementById('edit-modal-overlay');
     const editForm = document.getElementById('edit-passenger-form');
@@ -102,15 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const response = await fetch(`/api/passageiros/${passengerId}`);
                     if (!response.ok) throw new Error('Falha ao buscar dados do passageiro.');
-                    
+
                     const passenger = await response.json();
-                    
+
                     editPassengerIdInput.value = passenger.id;
                     editPassengerNameInput.value = passenger.nome;
                     editPassengerRfidInput.value = passenger.rfid_tag;
                     editPassengerAutorizadoInput.checked = passenger.autorizado;
                     editPassengerStatusLabel.textContent = passenger.autorizado ? 'Autorizado' : 'Não Autorizado';
-                    
+
                     editModalOverlay.classList.add('visible');
                 } catch (error) {
                     alert(error.message);
@@ -120,14 +120,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchPassengers(page = 1) {
+
         try {
-            const response = await fetch(`/api/passageiros?page=${page}&limit=7`);
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/passageiros?page=${page}&limit=7`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
+
             const result = await response.json();
             const passengers = result.data;
             currentPage = result.currentPage;
-            
+
             tableBody.innerHTML = '';
 
             if (passengers.length === 0) {
@@ -151,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
             }
-            
+
             renderPagination(result.totalPages, result.currentPage);
             addActionListeners();
         } catch (error) {
@@ -178,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             if (response.ok) {
-                fetchPassengers(currentPage); 
+                fetchPassengers(currentPage);
                 closeAllModals();
             } else {
                 alert(`Falha ao cadastrar: ${(await response.json()).erro}`);
@@ -206,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             if (response.ok) {
-                fetchPassengers(currentPage); 
+                fetchPassengers(currentPage);
                 closeAllModals();
             } else {
                 alert(`Falha ao atualizar: ${(await response.json()).erro}`);

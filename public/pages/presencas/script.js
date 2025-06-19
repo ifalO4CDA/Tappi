@@ -5,14 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
 
     // --- Lógica de Notificação em Tempo Real ---
-    
+
     function showNotification(message) {
         // Cria o elemento da notificação
         const notification = document.createElement('div');
         notification.className = 'toast-notification';
-        
+
         const icon = `<svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; color: var(--accent-color);" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`;
-        
+
         notification.innerHTML = `${icon} <p>${message}</p>`;
 
         notificationContainer.appendChild(notification);
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pageInfo = document.createElement('div');
         pageInfo.className = 'page-info';
         pageInfo.textContent = `Página ${page} de ${totalPages}`;
-        
+
         const controls = document.createElement('div');
         controls.className = 'pagination-controls';
 
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextButton.textContent = 'Próxima';
         nextButton.disabled = page === totalPages;
         nextButton.addEventListener('click', () => fetchPresencas(page + 1));
-        
+
         controls.appendChild(prevButton);
         controls.appendChild(nextButton);
         paginationContainer.appendChild(pageInfo);
@@ -96,12 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchPresencas(page = 1) {
         currentPage = page; // Atualiza a página atual
         try {
-            const response = await fetch(`/api/presencas?page=${page}&limit=10`);
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/presencas?page=${page}&limit=7`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!response.ok) throw new Error(`Erro na API: ${response.statusText}`);
-            
+
             const result = await response.json();
             const presencas = result.data;
-            
+
             tableBody.innerHTML = '';
 
             if (presencas.length === 0 && page === 1) {
@@ -114,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nomePassageiro = presenca.passageiro ? presenca.passageiro.nome : 'Passageiro não identificado';
                 return `<tr><td><strong>${nomePassageiro}</strong></td><td>${formatarData(presenca.createdAt)}</td></tr>`;
             }).join('');
-            
+
             renderPagination(result.totalPages, result.currentPage);
 
         } catch (error) {
@@ -122,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 2rem;">Falha ao carregar os dados. Verifique a consola.</td></tr>`;
         }
     }
-    
+
     // --- Inicialização ---
     fetchPresencas(1);
     connectWebSocket(); // Inicia a conexão WebSocket
