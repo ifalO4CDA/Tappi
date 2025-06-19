@@ -1,5 +1,6 @@
 const { Passageiro, Embarque } = require('../models');
 const { Sequelize } = require('sequelize');
+const { broadcast } = require('../websocket');
 const PassageiroController = {
 
     /**
@@ -47,6 +48,16 @@ const PassageiroController = {
             }
 
             await Embarque.create({ passageiro_id: passageiro.id });
+
+            // Notifica todos os clientes conectados via WebSocket
+            broadcast({
+                type: 'NOVA_PRESENCA',
+                payload: {
+                    nome: passageiro.nome,
+                    horario: new Date()
+                }
+            });
+
             res.status(201).json({ mensagem: `${passageiro.nome}!` });
         } catch (error) {
             console.error("Erro em registrarPresenca:", error);
@@ -171,7 +182,7 @@ const PassageiroController = {
     async listarPassageiros(req, res) {
         try {
             const page = parseInt(req.query.page, 10) || 1;
-            const limit = parseInt(req.query.limit, 10) || 10; 
+            const limit = parseInt(req.query.limit, 10) || 10;
             const offset = (page - 1) * limit;
 
 
