@@ -50,6 +50,40 @@ td .status-badge::before { content: ''; display: inline-block; width: 8px; heigh
 .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn:hover { background-color: #f3f4f6; color: var(--text-primary); }
 .icon-btn.delete:hover { background-color: #fee2e2; color: var(--error-color); }
+.card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pagination-controls button {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #f3f4f6;
+    color: var(--text-primary);
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
 
 /* --- Estilos do Modal --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(17, 24, 39, 0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1000; }

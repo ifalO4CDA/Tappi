@@ -28,6 +28,8 @@ router.delete('/passageiros/:id', PassageiroController.deletarPassageiro);
 // --- Rota de Presenças ---
 router.get('/presencas', PresencaController.listarTodas);
 
-
-
+// quero fazer uma rota ping para verificar se o servidor está ativo
+router.get('/ping', (req, res) => {
+    res.status(200).json({ message: 'OK!' });
+});
 module.exports = router;

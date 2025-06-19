@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // --- Elementos do DOM ---
     const tableBody = document.getElementById('passenger-table-body');
+    const paginationContainer = document.getElementById('pagination-container');
     
-    // --- Elementos do Modal de Edição ---
+    // Elementos do Modal de Edição
     const editModalOverlay = document.getElementById('edit-modal-overlay');
     const editForm = document.getElementById('edit-passenger-form');
     const closeEditModalBtn = document.getElementById('close-modal-btn');
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPassengerAutorizadoInput = document.getElementById('edit-autorizado');
     const editPassengerStatusLabel = document.getElementById('edit-status-label');
 
-    // --- Elementos do Modal de Adicionar ---
+    // Elementos do Modal de Adicionar
     const addModalOverlay = document.getElementById('add-modal-overlay');
     const addPassengerBtn = document.getElementById('add-passenger-btn');
     const addForm = document.getElementById('add-passenger-form');
@@ -22,18 +24,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const addAutorizadoInput = document.getElementById('add-autorizado');
     const addStatusLabel = document.getElementById('add-status-label');
 
-    // --- Funções Gerais dos Modais ---
+    // --- Variáveis de Estado ---
+    let currentPage = 1;
+
+    // --- Funções Auxiliares ---
     function closeAllModals() {
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.classList.remove('visible');
         });
     }
 
-    // --- Lógica Principal ---
+    // --- Lógica de Renderização ---
 
-    // Função para adicionar os event listeners para os botões de ação na tabela
+    function renderPagination(totalPages, currentPage) {
+        paginationContainer.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'page-info';
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+
+        const controls = document.createElement('div');
+        controls.className = 'pagination-controls';
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'Anterior';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) fetchPassengers(currentPage - 1);
+        });
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Próxima';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) fetchPassengers(currentPage + 1);
+        });
+
+        controls.appendChild(prevButton);
+        controls.appendChild(nextButton);
+        paginationContainer.appendChild(pageInfo);
+        paginationContainer.appendChild(controls);
+    }
+
     function addActionListeners() {
-        // Botão para abrir o modal de ADIÇÃO
         addPassengerBtn.addEventListener('click', () => {
             addForm.reset();
             addAutorizadoInput.checked = true;
@@ -41,20 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
             addModalOverlay.classList.add('visible');
         });
 
-        // Botões de DELETAR em cada linha
         document.querySelectorAll('.icon-btn.delete').forEach(button => {
             button.addEventListener('click', async (e) => {
                 const passengerId = e.currentTarget.dataset.id;
                 const passengerRow = e.currentTarget.closest('tr');
                 const passengerName = passengerRow.querySelector('td:first-child strong').textContent;
 
-                if (confirm(`Tem certeza que deseja deletar o passageiro "${passengerName}"?`)) {
+                if (confirm(`Tem a certeza que deseja eliminar o passageiro "${passengerName}"?`)) {
                     try {
                         const response = await fetch(`/api/passageiros/${passengerId}`, { method: 'DELETE' });
                         if (response.ok) {
-                            passengerRow.remove();
+                            fetchPassengers(currentPage); // Recarrega a página atual
                         } else {
-                            alert('Falha ao deletar o passageiro.');
+                            alert('Falha ao eliminar o passageiro.');
                         }
                     } catch (error) {
                         alert('Ocorreu um erro de comunicação com o servidor.');
@@ -63,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Botões de EDITAR em cada linha
         document.querySelectorAll('.icon-btn.edit').forEach(button => {
             button.addEventListener('click', async (e) => {
                 const passengerId = e.currentTarget.dataset.id;
@@ -87,14 +119,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função principal para buscar e renderizar a lista de passageiros
-    async function fetchPassengers() {
+    async function fetchPassengers(page = 1) {
         try {
-            const response = await fetch('/api/passageiros');
+            const response = await fetch(`/api/passageiros?page=${page}&limit=7`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
-            const passengers = await response.json();
-            tableBody.innerHTML = ''; // Limpa a tabela antes de preencher
+            const result = await response.json();
+            const passengers = result.data;
+            currentPage = result.currentPage;
+            
+            tableBody.innerHTML = '';
 
             if (passengers.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhum passageiro encontrado.</td></tr>`;
@@ -109,12 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="icon-btn edit" title="Editar Passageiro" data-id="${passenger.id}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                                    </button>
-                                    <button class="icon-btn delete" title="Deletar Passageiro" data-id="${passenger.id}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                                    </button>
+                                    <button class="icon-btn edit" title="Editar Passageiro" data-id="${passenger.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                                    <button class="icon-btn delete" title="Eliminar Passageiro" data-id="${passenger.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
                                 </div>
                             </td>
                         </tr>
@@ -122,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).join('');
             }
             
-            // Adiciona os event listeners depois que a tabela está no DOM
+            renderPagination(result.totalPages, result.currentPage);
             addActionListeners();
         } catch (error) {
             console.error('Erro ao buscar passageiros:', error);
@@ -131,66 +161,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Listeners dos Modais ---
-
-    // Listeners do Modal de Adicionar
     closeAddModalBtn.addEventListener('click', closeAllModals);
     cancelAddBtn.addEventListener('click', closeAllModals);
     addModalOverlay.addEventListener('click', (e) => { if (e.target === addModalOverlay) closeAllModals(); });
-    addAutorizadoInput.addEventListener('change', () => {
-        addStatusLabel.textContent = addAutorizadoInput.checked ? 'Autorizado' : 'Não Autorizado';
-    });
+    addAutorizadoInput.addEventListener('change', () => { addStatusLabel.textContent = addAutorizadoInput.checked ? 'Autorizado' : 'Não Autorizado'; });
     addForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const newPassengerData = {
-            nome: document.getElementById('add-nome').value,
-            rfid_tag: document.getElementById('add-rfid').value,
-            autorizado: document.getElementById('add-autorizado').checked
-        };
         try {
             const response = await fetch('/api/passageiros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newPassengerData)
+                body: JSON.stringify({
+                    nome: document.getElementById('add-nome').value,
+                    rfid_tag: document.getElementById('add-rfid').value,
+                    autorizado: document.getElementById('add-autorizado').checked
+                })
             });
             if (response.ok) {
-                fetchPassengers(); 
+                fetchPassengers(currentPage); 
                 closeAllModals();
             } else {
-                const errorData = await response.json();
-                alert(`Falha ao cadastrar: ${errorData.erro}`);
+                alert(`Falha ao cadastrar: ${(await response.json()).erro}`);
             }
         } catch (error) {
             alert('Ocorreu um erro de comunicação com o servidor.');
         }
     });
 
-    // Listeners do Modal de Edição
     closeEditModalBtn.addEventListener('click', closeAllModals);
     cancelEditBtn.addEventListener('click', closeAllModals);
     editModalOverlay.addEventListener('click', (e) => { if (e.target === editModalOverlay) closeAllModals(); });
-    editPassengerAutorizadoInput.addEventListener('change', () => {
-        editPassengerStatusLabel.textContent = editPassengerAutorizadoInput.checked ? 'Autorizado' : 'Não Autorizado';
-    });
+    editPassengerAutorizadoInput.addEventListener('change', () => { editPassengerStatusLabel.textContent = editPassengerAutorizadoInput.checked ? 'Autorizado' : 'Não Autorizado'; });
     editForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = editPassengerIdInput.value;
-        const updatedData = {
-            nome: editPassengerNameInput.value,
-            rfid_tag: editPassengerRfidInput.value,
-            autorizado: editPassengerAutorizadoInput.checked
-        };
         try {
             const response = await fetch(`/api/passageiros/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
+                body: JSON.stringify({
+                    nome: editPassengerNameInput.value,
+                    rfid_tag: editPassengerRfidInput.value,
+                    autorizado: editPassengerAutorizadoInput.checked
+                })
             });
             if (response.ok) {
-                fetchPassengers(); 
+                fetchPassengers(currentPage); 
                 closeAllModals();
             } else {
-                const errorData = await response.json();
-                alert(`Falha ao atualizar: ${errorData.erro}`);
+                alert(`Falha ao atualizar: ${(await response.json()).erro}`);
             }
         } catch (error) {
             alert('Ocorreu um erro de comunicação com o servidor.');
@@ -198,5 +217,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Carga Inicial ---
-    fetchPassengers();
+    fetchPassengers(1);
 });

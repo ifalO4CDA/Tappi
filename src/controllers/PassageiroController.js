@@ -47,7 +47,7 @@ const PassageiroController = {
             }
 
             await Embarque.create({ passageiro_id: passageiro.id });
-            res.status(201).json({ mensagem: `Presença de ${passageiro.nome} registrada com sucesso!` });
+            res.status(201).json({ mensagem: `${passageiro.nome}!` });
         } catch (error) {
             console.error("Erro em registrarPresenca:", error);
             res.status(500).json({ erro: 'Erro interno no servidor.' });
@@ -170,13 +170,30 @@ const PassageiroController = {
   */
     async listarPassageiros(req, res) {
         try {
-            const passageiros = await Passageiro.findAll({
+            const page = parseInt(req.query.page, 10) || 1;
+            const limit = parseInt(req.query.limit, 10) || 10; 
+            const offset = (page - 1) * limit;
+
+
+            const { count, rows } = await Passageiro.findAndCountAll({
+                limit: limit,
+                offset: offset,
+                order: [['nome', 'ASC']] // Mantém a ordenação alfabética
             });
 
-            res.status(200).json(passageiros);
+            // 3. Calcular o total de páginas
+            const totalPages = Math.ceil(count / limit);
+
+            // 4. Enviar a resposta num formato estruturado
+            res.status(200).json({
+                data: rows,
+                totalItems: count,
+                totalPages: totalPages,
+                currentPage: page
+            });
 
         } catch (error) {
-            console.error("Erro em listarTodos:", error);
+            console.error("Erro em listarPassageiros:", error);
             res.status(500).json({ erro: 'Erro interno no servidor.' });
         }
     },
