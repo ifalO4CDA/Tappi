@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('passenger-table-body');
     const paginationContainer = document.getElementById('pagination-container');
 
-    // Elementos do Modal de Edição
+    // Modal de Edição
     const editModalOverlay = document.getElementById('edit-modal-overlay');
     const editForm = document.getElementById('edit-passenger-form');
     const closeEditModalBtn = document.getElementById('close-modal-btn');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPassengerAutorizadoInput = document.getElementById('edit-autorizado');
     const editPassengerStatusLabel = document.getElementById('edit-status-label');
 
-    // Elementos do Modal de Adicionar
+    // Modal de Adicionar
     const addModalOverlay = document.getElementById('add-modal-overlay');
     const addPassengerBtn = document.getElementById('add-passenger-btn');
     const addForm = document.getElementById('add-passenger-form');
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelAddBtn = document.getElementById('cancel-add-btn');
     const addAutorizadoInput = document.getElementById('add-autorizado');
     const addStatusLabel = document.getElementById('add-status-label');
+    const token = localStorage.getItem('authToken');
 
     // --- Variáveis de Estado ---
     let currentPage = 1;
@@ -36,30 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Lógica de Renderização ---
 
-    function renderPagination(totalPages, currentPage) {
+    function renderPagination(totalPages, page) {
         paginationContainer.innerHTML = '';
         if (totalPages <= 1) return;
 
         const pageInfo = document.createElement('div');
         pageInfo.className = 'page-info';
-        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        pageInfo.textContent = `Página ${page} de ${totalPages}`;
 
         const controls = document.createElement('div');
         controls.className = 'pagination-controls';
 
         const prevButton = document.createElement('button');
         prevButton.textContent = 'Anterior';
-        prevButton.disabled = currentPage === 1;
-        prevButton.addEventListener('click', () => {
-            if (currentPage > 1) fetchPassengers(currentPage - 1);
-        });
+        prevButton.disabled = page === 1;
+        prevButton.addEventListener('click', () => fetchPassengers(page - 1));
 
         const nextButton = document.createElement('button');
         nextButton.textContent = 'Próxima';
-        nextButton.disabled = currentPage === totalPages;
-        nextButton.addEventListener('click', () => {
-            if (currentPage < totalPages) fetchPassengers(currentPage + 1);
-        });
+        nextButton.disabled = page === totalPages;
+        nextButton.addEventListener('click', () => fetchPassengers(page + 1));
 
         controls.appendChild(prevButton);
         controls.appendChild(nextButton);
@@ -78,17 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.icon-btn.delete').forEach(button => {
             button.addEventListener('click', async (e) => {
                 const passengerId = e.currentTarget.dataset.id;
-                const passengerRow = e.currentTarget.closest('tr');
-                const passengerName = passengerRow.querySelector('td:first-child strong').textContent;
-
-                if (confirm(`Tem a certeza que deseja eliminar o passageiro "${passengerName}"?`)) {
+                if (confirm(`Tem a certeza que deseja eliminar este passageiro?`)) {
                     try {
-                        const response = await fetch(`/api/passageiros/${passengerId}`, { method: 'DELETE' });
-                        if (response.ok) {
-                            fetchPassengers(currentPage); // Recarrega a página atual
-                        } else {
-                            alert('Falha ao eliminar o passageiro.');
-                        }
+                        const response = await fetch(`/api/passageiros/${passengerId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` } // Envia o token
+                        });
+                        if (response.ok) fetchPassengers(currentPage);
+                        else alert('Falha ao eliminar o passageiro.');
                     } catch (error) {
                         alert('Ocorreu um erro de comunicação com o servidor.');
                     }
@@ -100,7 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', async (e) => {
                 const passengerId = e.currentTarget.dataset.id;
                 try {
-                    const response = await fetch(`/api/passageiros/${passengerId}`);
+                    const response = await fetch(`/api/passageiros/${passengerId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` } // Envia o token
+                    });
                     if (!response.ok) throw new Error('Falha ao buscar dados do passageiro.');
 
                     const passenger = await response.json();
@@ -121,32 +117,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchPassengers(page = 1) {
 
+        currentPage = page;
         try {
-            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            console.log("token:", token); // Debug: Verifica se o token está sendo obtido corretamente
             const response = await fetch(`/api/passageiros?page=${page}&limit=7`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` } // Envia o token
             });
+
+            if (response.status === 401) { // Token inválido ou expirado
+                localStorage.removeItem('authToken');
+                window.location.href = '/login.html';
+                return;
+            }
+
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const result = await response.json();
             const passengers = result.data;
-            currentPage = result.currentPage;
 
             tableBody.innerHTML = '';
 
-            if (passengers.length === 0) {
+            if (passengers.length === 0 && page === 1) {
                 tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhum passageiro encontrado.</td></tr>`;
             } else {
                 tableBody.innerHTML = passengers.map(passenger => {
                     const statusClass = passenger.autorizado ? 'autorizado' : 'nao-autorizado';
-                    const statusText = passenger.autorizado ? 'Autorizado' : 'Não Autorizado';
                     return `
                         <tr>
                             <td><strong>${passenger.nome}</strong></td>
                             <td>${passenger.rfid_tag}</td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td><span class="status-badge ${statusClass}">${passenger.autorizado ? 'Autorizado' : 'Não Autorizado'}</span></td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="icon-btn edit" title="Editar Passageiro" data-id="${passenger.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
@@ -176,7 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/passageiros', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // <<--- CORREÇÃO AQUI
+                },
                 body: JSON.stringify({
                     nome: document.getElementById('add-nome').value,
                     rfid_tag: document.getElementById('add-rfid').value,
@@ -204,7 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/passageiros/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // <<--- CORREÇÃO AQUI
+                },
                 body: JSON.stringify({
                     nome: editPassengerNameInput.value,
                     rfid_tag: editPassengerRfidInput.value,
