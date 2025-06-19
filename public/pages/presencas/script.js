@@ -1,57 +1,82 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('presencas-table-body');
+    const paginationContainer = document.getElementById('pagination-container');
+    let currentPage = 1;
 
-    // Função para formatar a data para o padrão brasileiro
     function formatarData(dataISO) {
         if (!dataISO) return 'Data indisponível';
-        
         const options = {
             year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hour12: false // Formato de 24 horas
+            hour12: false
         };
-        
         try {
             return new Date(dataISO).toLocaleString('pt-BR', options);
         } catch (error) {
-            console.error('Erro ao formatar data:', error);
             return 'Data inválida';
         }
     }
 
-    // Função para buscar e exibir os registros de presença
-    async function fetchPresencas() {
+    function renderPagination(totalPages, currentPage) {
+        paginationContainer.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'page-info';
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+
+        const controls = document.createElement('div');
+        controls.className = 'pagination-controls';
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'Anterior';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) fetchPresencas(currentPage - 1);
+        });
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Próxima';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) fetchPresencas(currentPage + 1);
+        });
+
+        controls.appendChild(prevButton);
+        controls.appendChild(nextButton);
+        paginationContainer.appendChild(pageInfo);
+        paginationContainer.appendChild(controls);
+    }
+
+    async function fetchPresencas(page = 1) {
         try {
-            // 1. Faz a requisição para a rota da API que busca as presenças
-            const response = await fetch('/api/presencas');
+            const response = await fetch(`/api/presencas?page=${page}&limit=10`);
             if (!response.ok) {
                 throw new Error(`Erro na API: ${response.statusText}`);
             }
             
-            const presencas = await response.json();
+            const result = await response.json();
+            const presencas = result.data;
             
-            // 2. Limpa o corpo da tabela
             tableBody.innerHTML = '';
 
-            // 3. Verifica se há registros para exibir
             if (presencas.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 2rem;">Nenhum registro de presença encontrado.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 2rem;">Nenhum registo de presença encontrado.</td></tr>`;
+                paginationContainer.innerHTML = ''; // Limpa a paginação se não houver dados
                 return;
             }
 
-            // 4. Cria e insere uma linha na tabela para cada registro de presença
-            presencas.forEach(presenca => {
-                // Garante que o nome do passageiro seja exibido corretamente
+            tableBody.innerHTML = presencas.map(presenca => {
                 const nomePassageiro = presenca.passageiro ? presenca.passageiro.nome : 'Passageiro não identificado';
-                
-                const row = `
+                return `
                     <tr>
                         <td><strong>${nomePassageiro}</strong></td>
                         <td>${formatarData(presenca.createdAt)}</td>
                     </tr>
                 `;
-                tableBody.innerHTML += row;
-            });
+            }).join('');
+            
+            renderPagination(result.totalPages, result.currentPage);
 
         } catch (error) {
             console.error('Erro ao buscar presenças:', error);
@@ -59,5 +84,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    fetchPresencas();
+    fetchPresencas(1);
 });
